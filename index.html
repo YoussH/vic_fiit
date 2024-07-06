@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion de séances de sport</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        form, .exercise-container {
+            margin-bottom: 20px;
+        }
+        input, select, button {
+            margin-right: 10px;
+            margin-top: 5px;
+        }
+        #timer {
+            font-size: 2em;
+            margin-top: 20px;
+        }
+        .exercise-item {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gestion de séances de sport</h1>
+    <form id="exerciseForm">
+        <button type="button" onclick="addExerciseField()">+</button>
+        <button type="button" onclick="startSession()">Commencer</button>
+    </form>
+    <div id="timer">00:00:00</div>
+    <div id="exerciseList"></div>
+
+    <script>
+        let exercises = [];
+        let exerciseFields = 0;
+        let interval;
+        let startTime;
+
+        function addExerciseField() {
+            const form = document.getElementById('exerciseForm');
+            const exerciseContainer = document.createElement('div');
+            exerciseContainer.classList.add('exercise-container');
+            exerciseContainer.innerHTML = `
+                <input type="text" placeholder="Exercice" id="exercise_${exerciseFields}">
+                <input type="number" placeholder="Total" id="total_${exerciseFields}">
+                <select id="type_${exerciseFields}">
+                    <option value="secondes">Secondes</option>
+                    <option value="répétitions">Répétitions</option>
+                </select>
+            `;
+            form.insertBefore(exerciseContainer, form.childNodes[form.childNodes.length - 2]);
+            exerciseFields++;
+        }
+
+        function startSession() {
+            for (let i = 0; i < exerciseFields; i++) {
+                const exercise = document.getElementById(`exercise_${i}`).value;
+                const total = parseInt(document.getElementById(`total_${i}`).value);
+                const type = document.getElementById(`type_${i}`).value;
+
+                if (exercise && total && type) {
+                    exercises.push({ exercise, total, type, current: 0 });
+                }
+            }
+
+            if (exercises.length > 0) {
+                startTime = Date.now();
+                interval = setInterval(updateTimer, 1000);
+                updateExerciseList();
+            } else {
+                alert('Veuillez ajouter au moins un exercice.');
+            }
+        }
+
+        function updateTimer() {
+            const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+            const hours = String(Math.floor(elapsedTime / 3600)).padStart(2, '0');
+            const minutes = String(Math.floor((elapsedTime % 3600) / 60)).padStart(2, '0');
+            const seconds = String(elapsedTime % 60).padStart(2, '0');
+            document.getElementById('timer').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        function updateExerciseList() {
+            const list = document.getElementById('exerciseList');
+            list.innerHTML = '';
+            exercises.forEach((ex, index) => {
+                const item = document.createElement('div');
+                item.classList.add('exercise-item');
+                item.innerHTML = `
+                    ${ex.exercise} ${ex.current}/${ex.total} ${ex.type} 
+                    <input type="number" id="increment_${index}" placeholder="Increment">
+                    <button type="button" onclick="updateExercise(${index})">Valider</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function updateExercise(index) {
+            const incrementValue = parseInt(document.getElementById(`increment_${index}`).value);
+            if (!isNaN(incrementValue)) {
+                exercises[index].current += incrementValue;
+                updateExerciseList();
+                checkCompletion();
+            } else {
+                alert('Veuillez entrer un nombre valide.');
+            }
+        }
+
+        function checkCompletion() {
+            const allCompleted = exercises.every(ex => ex.current >= ex.total);
+            if (allCompleted) {
+                clearInterval(interval);
+                alert('Séance terminée !');
+            }
+        }
+    </script>
+</body>
+</html>
